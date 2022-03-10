@@ -14,7 +14,8 @@ namespace ERItemRandomiserLoader {
 
 enum UserPreferences {
 	option_none = 0,
-	option_autoequip = 1,
+	option_autoequip = 1 << 0,
+	option_randomisemaps = 1 << 1,
 };
 
 class ERItemRandomiser {

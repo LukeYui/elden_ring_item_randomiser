@@ -72,8 +72,8 @@ bool ERItemRandomiserHooks::Shuffle() {
 		itemlotparam_map = *(uint64_t*)(itemlotparam_map + 0x80);
 
 		uint16_t param_entries = *(uint16_t*)(itemlotparam_map + 0x0A) - 1;
-		std::vector<uint32_t> offset_list;
-		std::vector<uint16_t> writeto_list;
+		std::vector< ItemLotParam_map*> mapitem_list;
+		std::vector< ItemLotParam_map*> mapitem_list_copy;
 
 		uint32_t start_offset = (*(uint32_t*)(itemlotparam_map - 0x10) + 15) & -16;
 		uint64_t itemlotparam_map_idrepository = itemlotparam_map + start_offset;
@@ -90,15 +90,21 @@ bool ERItemRandomiserHooks::Shuffle() {
 				continue;
 			};
 
-			offset_list.push_back(entry);
-			writeto_list.push_back(w);
+			mapitem_list.push_back(param_container);
 		};
 
-		std::shuffle(offset_list.begin(), offset_list.end(), std::default_random_engine(mapitem_seed));
+		// Shuffle the list copy
+		mapitem_list_copy = mapitem_list;
+		std::shuffle(mapitem_list_copy.begin(), mapitem_list_copy.end(), std::default_random_engine(mapitem_seed));
 
-		for (size_t q = 0; q < writeto_list.size(); q++) {
-			uint32_t entry = writeto_list.at(q);
-			*(uint32_t*)(itemlotparam_map_idrepository + (entry * 8) + 4) = offset_list.at(q);
+		// Instead of shuffling entries, shuffle the items within the param container itself
+		for (size_t q = 0; q < mapitem_list_copy.size(); q++) {
+			ItemLotParam_map* param_container_original_order = mapitem_list.at(q);
+			ItemLotParam_map* param_container_shuffle = mapitem_list_copy.at(q);
+			for (int i = 0; i < sizeof(ItemLotParam_map::item_id_array) / sizeof(uint32_t); i++) {
+				param_container_original_order->item_id_array[i] = param_container_shuffle->item_id_array[i];
+				param_container_original_order->item_type_array[i] = param_container_shuffle->item_type_array[i];
+			};
 		};
 	};
 
@@ -142,10 +148,15 @@ bool ERItemRandomiserHooks::ShouldRandomiseMapItem(ItemLotParam_map* param_conta
 	for (int i = 0; i < sizeof(ItemLotParam_map::item_id_array) / sizeof(uint32_t); i++) {
 		uint32_t item_id = param_container->item_id_array[i];
 		if (item_id) {
+
 			switch (param_container->item_type_array[i]) {
 
 				// Don't randomise certain keys and crafting materials
 				case(mapitemtype_goods): {
+
+					if (item_id < 100) {
+						return false;
+					};
 
 					if ((item_id >= 15000) && (item_id <= 53658)) {
 						return false;
@@ -156,6 +167,14 @@ bool ERItemRandomiserHooks::ShouldRandomiseMapItem(ItemLotParam_map* param_conta
 							return false;
 						};
 					};
+
+					// Don't randomise maps if selected not to do so
+					if ((item_id >= 8600) && (item_id <= 8618)) {
+						if (!random_maps) {
+							return false;
+						};
+					};
+
 					break;
 				};
 				case(mapitemtype_weapon): {
@@ -374,6 +393,7 @@ bool ERItemRandomiserHooks::RandomiseProperty_Weapon(ItemInfo* item_info, uint32
 		case(weapon_type_ballista):
 		case(weapon_type_glintstone_staff):
 		case(weapon_type_sacred_seal): {
+			weapon_slot_equip = 1;
 			special_property_exempt = true;
 			break;
 		};
@@ -545,11 +565,8 @@ bool ERItemRandomiserHooks::RandomiseProperty_Accessory(ItemInfo* item_info, uin
 	uint32_t equip_slot = __UINT32_MAX__;
 	if (player_data) {
 		uint8_t max_talisman_count = *(uint8_t*)(player_data + 0xC6);
-		max_talisman_count = max_talisman_count <= 3 ? max_talisman_count : 3;
-		if (max_talisman_count) {
-			// Base slot is index 17
-			equip_slot = main_mod->GetRandomUint(0, max_talisman_count) + 17;
-		};
+		max_talisman_count = max_talisman_count <= 4 ? max_talisman_count : 4;
+		equip_slot = main_mod->GetRandomUint(0, max_talisman_count) + 17;
 	};
 
 	if (equip_slot != __UINT32_MAX__) {
@@ -570,9 +587,9 @@ bool ERItemRandomiserHooks::RandomiseProperty_Goods(ItemInfo* item_info, uint32_
 
 	// Lookup EquipParamGoods
 	// key item? Where is it sorted?
-
+	uint32_t item_id_holder = item_info->item_id;
 	ParamContainer param_container = ParamContainer();
-	find_equipparamgoods_function(&param_container, item_info->item_id & 0x0FFFFFFF);
+	find_equipparamgoods_function(&param_container, item_id_holder & 0x0FFFFFFF);
 
 	EquipParamGoods* goods_info = (EquipParamGoods*)param_container.param_entry;
 	if (goods_info == nullptr) {
@@ -583,6 +600,18 @@ bool ERItemRandomiserHooks::RandomiseProperty_Goods(ItemInfo* item_info, uint32_
 	// Generate a quantity for the goods. If the max is 1 then just give 1
 	uint16_t anticipated_quantity = 1;
 	uint16_t sensible_max_quantity = goods_info->max_inventory;
+	switch (goods_info->item_type) {
+		case(itemtype_tools): {}
+		case(itemtype_sorceries): {}
+		case(itemtype_ashes): {}
+		case(itemtype_info): {}
+		case(itemtype_incantations): {
+			sensible_max_quantity = 1;
+			break;
+		};
+		default: break;
+	};
+
 	if (anticipated_quantity < sensible_max_quantity) {
 		uint32_t max_gen = sensible_max_quantity > 5 ? 5 : sensible_max_quantity;
 		anticipated_quantity = main_mod->GetRandomUint(anticipated_quantity, max_gen);
@@ -592,7 +621,6 @@ bool ERItemRandomiserHooks::RandomiseProperty_Goods(ItemInfo* item_info, uint32_
 	item_info->item_quantity = anticipated_quantity;
 	item_info->item_relayvalue = 0;
 	item_info->item_ashes_of_war = __UINT32_MAX__;
-
 	return true;
 };
 

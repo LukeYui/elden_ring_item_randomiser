@@ -156,9 +156,11 @@ enum MapItemType : uint32_t {
 };
 
 struct ItemLotParam_map {
-	uint32_t item_id_array[7];
-	uint32_t filler_bytes;
-	MapItemType item_type_array[7];
+	uint32_t item_id_array[8];
+	MapItemType item_type_array[8];
+	uint16_t unk_array_01[8];
+	uint16_t unk_array_02[8];
+	uint32_t item_completeevent_type[8];
 };
 	
 
@@ -183,8 +185,9 @@ public:
 
 	};
 
-	ERItemRandomiserHooks(bool is_auto_equip, uint64_t seed) {
+	ERItemRandomiserHooks(bool is_auto_equip, bool is_random_maps, uint64_t seed) {
 		auto_equip = is_auto_equip;
+		random_maps = is_random_maps;
 		mapitem_seed = (uint32_t)seed;
 		enemyitem_seed = (uint32_t)(seed >> 32 ^ mapitem_seed);
 		game_data_manager_address = 0;
@@ -324,6 +327,7 @@ private:
 	bool ShouldRandomiseMapItem(ItemLotParam_map* param_container);
 	static void RandomiseItemHook(uint64_t map_item_manager, ItemGiveStruct* item_info, void* item_details);
 	uint32_t auto_equip;
+	uint32_t random_maps;
 	uint32_t mapitem_seed;
 	uint32_t enemyitem_seed;
 	uint64_t game_data_manager_address;

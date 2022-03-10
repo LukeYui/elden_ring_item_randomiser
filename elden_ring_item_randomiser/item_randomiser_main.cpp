@@ -26,7 +26,7 @@ void ERItemRandomiser::RunSaveListener() {
 		//
 	};
 
-	hook_class = ERItemRandomiserHooks(user_preferences & option_autoequip, randomiser_seed);
+	hook_class = ERItemRandomiserHooks(user_preferences & option_autoequip, user_preferences & option_randomisemaps, randomiser_seed);
 	if (!hook_class.CreateMemoryEdits()) {
 		//
 		return;
@@ -59,6 +59,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 
 	std::string header_segment = "MOD";
 	user_preferences = option_reader.GetBoolean(header_segment, "autoequip", true) ? static_cast<UserPreferences>(user_preferences | option_autoequip) : user_preferences;
+	user_preferences = option_reader.GetBoolean(header_segment, "randomisemaps", true) ? static_cast<UserPreferences>(user_preferences | option_randomisemaps) : user_preferences;
 
 	// Seed
 	OFSTRUCT file_struct = {};
