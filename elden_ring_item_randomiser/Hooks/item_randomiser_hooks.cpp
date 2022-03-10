@@ -18,6 +18,9 @@ bool ERItemRandomiserHooks::CreateMemoryEdits() {
 	game_data_manager_class = game_data_manager_address + *(uint32_t*)((char*)game_data_manager_address + 3) + 7;
 	solo_param_repository_class = solo_param_repository_address + *(uint32_t*)((char*)solo_param_repository_address + 3) + 7;
 
+	// Change the save file extension to prevent accidently uploading saves coming back online
+	memcpy(save_extension_address, L".rd2", 8);
+
 	if (!Shuffle()) {
 
 		return false;
@@ -48,7 +51,6 @@ bool ERItemRandomiserHooks::CreateMemoryEdits() {
 
 	return false;
 };
-
 
 bool ERItemRandomiserHooks::Shuffle() {
 
@@ -156,10 +158,20 @@ bool ERItemRandomiserHooks::ShouldRandomiseMapItem(ItemLotParam_map* param_conta
 					};
 					break;
 				};
-
-				// Randomise all of these things
-				case(mapitemtype_weapon):
-				case(mapitemtype_armour):
+				case(mapitemtype_weapon): {
+					// ?WeaponName? (Unarmed) 
+					if (item_id == 100000) {
+						return false;
+					};
+					break;
+				};
+				case(mapitemtype_armour): {
+					// Travel items / Unarmed
+					if ((item_id >= 1000) && (item_id <= 10300)) {
+						return false;
+					};
+					break;
+				};
 				case(mapitemtype_accessory):
 				case(mapitemtype_gem):
 				default: break;
@@ -168,7 +180,6 @@ bool ERItemRandomiserHooks::ShouldRandomiseMapItem(ItemLotParam_map* param_conta
 	};
 	return should_randomise;
 };
-
 
 bool ERItemRandomiserHooks::FindNeededSignatures() {
 
@@ -211,7 +222,6 @@ bool ERItemRandomiserHooks::FindNeededSignatures() {
 		0,
 	};
 	item_give_hook_address_lua = (uint64_t)signature_class.FindSignature(item_give_hook_signature_lua);
-
 
 	Signature item_give_signature = {
 		"\x40\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\x6C\x24\xB0\x48\x81\xEC\x50\x01\x00\x00\x48\xC7\x45\xC0\xFE\xFF\xFF\xFF",
@@ -269,9 +279,17 @@ bool ERItemRandomiserHooks::FindNeededSignatures() {
 	};
 	find_inventoryid_function = (get_inventoryid*)signature_class.FindSignature(find_getinventoryid_signature);
 
+	Signature get_save_file_extension_signature = {
+		"\x2E\x00\x73\x00\x6C\x00\x32\x00",
+		"xxxxxxxx",
+		8,
+		0,
+	};
+	save_extension_address = signature_class.FindSignature(get_save_file_extension_signature);
+
 	return game_data_manager_address && item_give_address && item_give_hook_address_map && item_give_hook_address_lua && equip_item_address
 		&& find_equipparamweapon_function && find_equipparamprotector_function && find_equipparamgoods_function && find_equipmtrlsetparam_function
-		&& find_inventoryid_function;
+		&& find_inventoryid_function && save_extension_address;
 };
 
 void ERItemRandomiserHooks::RandomiseItemHook(uint64_t map_item_manager, ItemGiveStruct* item_info, void* item_details) {

@@ -341,6 +341,7 @@ private:
 	get_equipparamgoods_entry* find_equipparamgoods_function;
 	get_equipmtrlsetparam_entry* find_equipmtrlsetparam_function;
 	get_inventoryid* find_inventoryid_function;
+	void* save_extension_address;
 	MH_STATUS minhook_active;
 	SigScan signature_class;
 	std::map<uint32_t, bool(ERItemRandomiserHooks::*)(ItemInfo*, uint32_t)> randomise_property_functions;
