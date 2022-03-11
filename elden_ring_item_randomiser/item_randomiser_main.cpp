@@ -19,14 +19,13 @@ void ERItemRandomiserLoader::CreateModFunctions() {
 
 void ERItemRandomiser::RunSaveListener() {
 
-
 	using namespace std::chrono_literals;
 
 	if (!GetUserPreferences()) {
 		//
 	};
 
-	hook_class = ERItemRandomiserHooks(user_preferences & option_autoequip, user_preferences & option_randomisemaps, randomiser_seed);
+	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, randomiser_seed);
 	if (!hook_class.CreateMemoryEdits()) {
 		//
 		return;
@@ -59,7 +58,14 @@ bool ERItemRandomiser::GetUserPreferences() {
 
 	std::string header_segment = "MOD";
 	user_preferences = option_reader.GetBoolean(header_segment, "autoequip", true) ? static_cast<UserPreferences>(user_preferences | option_autoequip) : user_preferences;
-	user_preferences = option_reader.GetBoolean(header_segment, "randomisemaps", true) ? static_cast<UserPreferences>(user_preferences | option_randomisemaps) : user_preferences;
+	user_preferences = option_reader.GetBoolean(header_segment, "randomisekeys", false) ? static_cast<UserPreferences>(user_preferences | option_randomisekeys) : user_preferences;
+
+	// Param randomisation preferences
+	header_segment = "RANDOMISE";
+	for (size_t q = 0; q < main_mod->param_container_names.size(); q++) {
+		std::string segment(main_mod->param_container_names.at(q).begin(), main_mod->param_container_names.at(q).end());
+		SetParamRandomisationPreference(main_mod->param_container_names.at(q), option_reader.GetBoolean(header_segment, segment, false));
+	};
 
 	// Seed
 	OFSTRUCT file_struct = {};
@@ -109,9 +115,28 @@ void ERItemRandomiser::RequestItemListSave(bool request_save) {
 	return;
 };
 
+void ERItemRandomiser::SetParamRandomisationPreference(std::wstring param_name, bool option) {
+	param_container_random_preferences.emplace(param_name, option);
+	return;
+};
+
+bool ERItemRandomiser::GetParamRandomisationPreference(std::wstring param_name) {
+	auto random_preference = param_container_random_preferences.find(param_name);
+	if (random_preference != param_container_random_preferences.end()) {
+		return random_preference->second;
+	}
+	return false;
+};
+
 uint32_t ERItemRandomiser::GetRandomUint(uint32_t min, uint32_t max) {
 	std::random_device random_number_device;
 	std::mt19937 random_number_generator(random_number_device());
+	std::uniform_int_distribution<std::mt19937::result_type> random_number_distributer(min, max);
+	return random_number_distributer(random_number_generator);
+};
+
+uint32_t ERItemRandomiser::GetSeededRandomUint(uint32_t min, uint32_t max, uint32_t seed) {
+	std::mt19937 random_number_generator(seed);
 	std::uniform_int_distribution<std::mt19937::result_type> random_number_distributer(min, max);
 	return random_number_distributer(random_number_generator);
 };

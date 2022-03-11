@@ -177,19 +177,22 @@ typedef void get_equipparamgoods_entry(ParamContainer*, uint32_t);
 typedef void get_equipmtrlsetparam_entry(ParamContainer*, uint32_t);
 typedef int get_inventoryid(uint64_t, uint32_t*);
 
-class ERItemRandomiserHooks {
+class ERRandomiserBase {
 public:
 	bool CreateMemoryEdits();
 
-	ERItemRandomiserHooks() {
+	ERRandomiserBase() {
 
 	};
 
-	ERItemRandomiserHooks(bool is_auto_equip, bool is_random_maps, uint64_t seed) {
+	ERRandomiserBase(bool is_auto_equip, bool is_random_keys, uint64_t seed) {
 		auto_equip = is_auto_equip;
-		random_maps = is_random_maps;
+		random_keys = is_random_keys;
 		mapitem_seed = (uint32_t)seed;
 		enemyitem_seed = (uint32_t)(seed >> 32 ^ mapitem_seed);
+		randomkey_seed = 0 - (mapitem_seed + enemyitem_seed);
+		static_rune_01 = 0;
+		static_rune_02 = 0;
 		game_data_manager_address = 0;
 		game_data_manager_class = 0;
 		solo_param_repository_address = 0;
@@ -207,19 +210,27 @@ public:
 		find_inventoryid_function = nullptr;
 		minhook_active = MH_UNKNOWN;
 		signature_class = SigScan();
-		randomise_property_functions.emplace(0, &ERItemRandomiserHooks::RandomiseProperty_Weapon);
-		randomise_property_functions.emplace(1, &ERItemRandomiserHooks::RandomiseProperty_Armour);
-		randomise_property_functions.emplace(2, &ERItemRandomiserHooks::RandomiseProperty_Accessory);
-		randomise_property_functions.emplace(4, &ERItemRandomiserHooks::RandomiseProperty_Goods);
+		randomise_property_functions.emplace(0, &ERRandomiserBase::RandomiseProperty_Weapon);
+		randomise_property_functions.emplace(1, &ERRandomiserBase::RandomiseProperty_Armour);
+		randomise_property_functions.emplace(2, &ERRandomiserBase::RandomiseProperty_Accessory);
+		randomise_property_functions.emplace(4, &ERRandomiserBase::RandomiseProperty_Goods);
 		auto_equip_buffer.fill(EquipInfo());
 		specialweapon_max_converter = { 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 7, 7, 7, 8, 8, 9, 9, 9, 10 };
 		excluded_items = {
-			106,  // Tarnished's Wizened Finger
 			130,  // Spectral Steed Whistle
 			1001, // Flask of Crimson Tears (Tutorial)
 			1051, // Flask of Cerulean Tears
+			8105, // Dectus Medallion (Left)
+			8106, // Dectus Medallion (Right)
+			8107, // Rold Medallion
 			8109, // Academy Glintstone Key
 			8158, // Spirit Calling Bell
+		};
+		static_runes = {
+			8148,	// Godrick's Great Rune
+			8149,	// Radahn's Great Rune
+			8151,	// Rykard's Great Rune
+			10080,  // Rennala's Great Rune
 		};
 		ashes_selection = {
 			10000,	//Ash of War: Lion's Claw
@@ -316,7 +327,7 @@ public:
 		};
 	};
 
-	~ERItemRandomiserHooks() {
+	~ERRandomiserBase() {
 		//MH_Uninitialize();
 	};
 
@@ -324,12 +335,16 @@ public:
 private:
 	bool FindNeededSignatures();
 	bool Shuffle();
+	bool ShuffleParamEntryTable(std::wstring param_name, uint32_t seed);
 	bool ShouldRandomiseMapItem(ItemLotParam_map* param_container);
 	static void RandomiseItemHook(uint64_t map_item_manager, ItemGiveStruct* item_info, void* item_details);
 	uint32_t auto_equip;
-	uint32_t random_maps;
+	uint32_t random_keys;
 	uint32_t mapitem_seed;
 	uint32_t enemyitem_seed;
+	uint32_t randomkey_seed;
+	uint32_t static_rune_01;
+	uint32_t static_rune_02;
 	uint64_t game_data_manager_address;
 	uint64_t game_data_manager_class;
 	uint64_t solo_param_repository_address;
@@ -348,13 +363,14 @@ private:
 	void* save_extension_address;
 	MH_STATUS minhook_active;
 	SigScan signature_class;
-	std::map<uint32_t, bool(ERItemRandomiserHooks::*)(ItemInfo*, uint32_t)> randomise_property_functions;
+	std::map<uint32_t, bool(ERRandomiserBase::*)(ItemInfo*, uint32_t)> randomise_property_functions;
 	bool RandomiseProperty_Weapon(ItemInfo* item_info, uint32_t entry);
 	bool RandomiseProperty_Armour(ItemInfo* item_info, uint32_t entry);
 	bool RandomiseProperty_Accessory(ItemInfo* item_info, uint32_t entry);
 	bool RandomiseProperty_Goods(ItemInfo* item_info, uint32_t entry);
 	std::array<EquipInfo, 7> auto_equip_buffer;
 	std::array<uint8_t, 27> specialweapon_max_converter;
+	std::array<uint32_t, 8> excluded_items;
+	std::array<uint32_t, 4> static_runes;
 	std::array<uint32_t, 91> ashes_selection;
-	std::array<uint32_t, 6> excluded_items;
 };
