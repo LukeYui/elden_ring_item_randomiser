@@ -224,7 +224,12 @@ public:
 			8106, // Dectus Medallion (Right)
 			8107, // Rold Medallion
 			8109, // Academy Glintstone Key
+			8010, // Rusty key
 			8158, // Spirit Calling Bell
+			8171, // Chrysalids' Memento
+			8175, // Haligtree Secret Medallion (Left)
+			8176, // Haligtree Secret Medallion (Right)
+			8590, // Whetstone Knife
 		};
 		static_runes = {
 			8148,	// Godrick's Great Rune
@@ -370,7 +375,7 @@ private:
 	bool RandomiseProperty_Goods(ItemInfo* item_info, uint32_t entry);
 	std::array<EquipInfo, 7> auto_equip_buffer;
 	std::array<uint8_t, 27> specialweapon_max_converter;
-	std::array<uint32_t, 8> excluded_items;
+	std::array<uint32_t, 13> excluded_items;
 	std::array<uint32_t, 4> static_runes;
 	std::array<uint32_t, 91> ashes_selection;
 };

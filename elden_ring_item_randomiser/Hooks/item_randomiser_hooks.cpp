@@ -75,7 +75,7 @@ bool ERRandomiserBase::Shuffle() {
 		itemlotparam_map = *(uint64_t*)(itemlotparam_map + 0x80);
 		itemlotparam_map = *(uint64_t*)(itemlotparam_map + 0x80);
 
-		uint16_t param_entries = *(uint16_t*)(itemlotparam_map + 0x0A) - 1;
+		uint16_t param_entries = *(uint16_t*)(itemlotparam_map - 0x0C);
 		std::vector< ItemLotParam_map*> mapitem_list;
 		std::vector< ItemLotParam_map*> mapitem_list_copy;
 
@@ -158,7 +158,7 @@ bool ERRandomiserBase::ShuffleParamEntryTable(std::wstring param_name, uint32_t 
 	found_param_container = *(uint64_t*)(found_param_container + 0x80);
 	found_param_container = *(uint64_t*)(found_param_container + 0x80);
 
-	uint16_t param_entries = *(uint16_t*)(found_param_container + 0x0A) - 1;
+	uint16_t param_entries = *(uint16_t*)(found_param_container - 0x0C);
 	std::vector<uint32_t> offset_list;
 
 	uint32_t start_offset = (*(uint32_t*)(found_param_container - 0x10) + 15) & -16;
