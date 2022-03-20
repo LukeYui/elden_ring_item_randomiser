@@ -21,13 +21,16 @@ bool ERRandomiserBase::CreateMemoryEdits() {
 	// Change the save file extension to prevent accidently uploading saves coming back online
 	memcpy(save_extension_address, L".rd2", 8);
 
+	randomiser_properties = ERRandomiserProperties(game_data_manager_class, &auto_equip_buffer, find_equipparamweapon_function,
+		find_equipparamprotector_function, find_equipparamgoods_function, find_equipmtrlsetparam_function);
+
 	if (!Shuffle()) {
-		throw std::runtime_error("");
+		throw std::runtime_error("Failed to apply mod effects");
 		return false;
 	};
 
 	DWORD old_protect = 0;
-	if (MH_CreateHook((void*)item_give_hook_address_map, &ERRandomiserBase::RandomiseItemHook, nullptr) == MH_OK) {
+	if (MH_CreateHook((void*)item_give_hook_address_map, (void*)&ERRandomiserBase::RandomiseItemHook, nullptr) == MH_OK) {
 		MH_EnableHook((void*)item_give_hook_address_map);
 		if (VirtualProtect((void*)item_give_hook_address_map, 8, PAGE_EXECUTE_READWRITE, &old_protect)) {
 			uint8_t call_bytes = 0xE8;
@@ -39,13 +42,14 @@ bool ERRandomiserBase::CreateMemoryEdits() {
 	};
 
 	old_protect = 0;
-	if (MH_CreateHook((void*)item_give_hook_address_lua, &ERRandomiserBase::RandomiseItemHook, nullptr) == MH_OK) {
+	if (MH_CreateHook((void*)item_give_hook_address_lua, (void*)&ERRandomiserBase::RandomiseItemHook, nullptr) == MH_OK) {
 		MH_EnableHook((void*)item_give_hook_address_lua);
 		if (VirtualProtect((void*)item_give_hook_address_lua, 8, PAGE_EXECUTE_READWRITE, &old_protect)) {
 			uint8_t call_bytes = 0xE8;
 			memcpy((void*)item_give_hook_address_lua, &call_bytes, sizeof(call_bytes));
 			VirtualProtect((void*)item_give_hook_address_lua, 8, old_protect, &old_protect);
 		};
+
 		return true;
 	};
 
@@ -54,6 +58,8 @@ bool ERRandomiserBase::CreateMemoryEdits() {
 
 bool ERRandomiserBase::Shuffle() {
 
+	using namespace std::chrono_literals;
+
 	// Get the two runes we're going to keep static
 	static_rune_01 = static_runes.at(main_mod->GetSeededRandomUint(0, 1, randomkey_seed));
 	static_rune_02 = static_runes.at(main_mod->GetSeededRandomUint(2, 3, randomkey_seed));
@@ -61,7 +67,7 @@ bool ERRandomiserBase::Shuffle() {
 	uint64_t solo_param_reposiory = *(uint64_t*)(solo_param_repository_class);
 	while (!solo_param_reposiory) {
 		solo_param_reposiory = *(uint64_t*)(solo_param_repository_class);
-		Sleep(1000);
+		std::this_thread::sleep_for(1s);
 	};
 
 	// Shuffle ItemLotParam_map entries carefully
@@ -82,6 +88,12 @@ bool ERRandomiserBase::Shuffle() {
 		uint32_t start_offset = (*(uint32_t*)(itemlotparam_map - 0x10) + 15) & -16;
 		uint64_t itemlotparam_map_idrepository = itemlotparam_map + start_offset;
 		for (uint16_t w = 1; w < param_entries; w++) {
+
+			// Don't include respawning shard material in the pool
+			uint32_t mapitem_id = *(uint32_t*)(itemlotparam_map_idrepository + (w * 8));
+			if (mapitem_id == 997960) {
+				continue;
+			};
 
 			uint32_t entry = *(uint32_t*)(itemlotparam_map_idrepository + (w * 8) + 4);
 			if ((int)entry < 0) {
@@ -114,24 +126,35 @@ bool ERRandomiserBase::Shuffle() {
 
 	// Just randomise all of the selected params
 	for (size_t q = 0; q < main_mod->param_container_names.size(); q++) {
-		if (main_mod->GetParamRandomisationPreference(main_mod->param_container_names.at(q))) {
-			if (!ShuffleParamEntryTable(main_mod->param_container_names.at(q), enemyitem_seed)) {
-				throw std::runtime_error("Generic param table randomisation failure");
+		RandomiseType param_randomise_type = main_mod->GetParamRandomisationPreference(main_mod->param_container_names.at(q));
+		switch (param_randomise_type) {
+
+			case(randomisetype_shuffle): {
+				if (!ShuffleParamEntryTable(solo_param_reposiory, main_mod->param_container_names.at(q), enemyitem_seed, true, false)) {
+					throw std::runtime_error("Shuffle generic param table failure");
+				};
+				break;
 			};
+			case(randomisetype_scramble): {
+				if (!ShuffleParamEntryTable(solo_param_reposiory, main_mod->param_container_names.at(q), enemyitem_seed, false, true)) {
+					throw std::runtime_error("Scramble generic param table failure");
+				};
+				break;
+			};
+			case(randomisetype_butcher): {
+				if (!ShuffleParamEntryTable(solo_param_reposiory, main_mod->param_container_names.at(q), enemyitem_seed, true, true)) {
+					throw std::runtime_error("Butcher generic param table failure");
+				};
+				break;
+			};
+			default: break;
 		};
 	};
 
 	return true;
 };
 
-bool ERRandomiserBase::ShuffleParamEntryTable(std::wstring param_name, uint32_t seed) {
-
-	// Make sure solo param repository is active
-	uint64_t solo_param_repository = *(uint64_t*)(solo_param_repository_class);
-	while (!solo_param_repository) {
-		solo_param_repository = *(uint64_t*)(solo_param_repository_class);
-		Sleep(1000);
-	};
+bool ERRandomiserBase::ShuffleParamEntryTable(uint64_t solo_param_repository, std::wstring param_name, uint32_t seed, bool shuffle, bool scramble) {
 
 	// Get offset by name
 	uint64_t found_param_container = 0;
@@ -158,24 +181,106 @@ bool ERRandomiserBase::ShuffleParamEntryTable(std::wstring param_name, uint32_t 
 	found_param_container = *(uint64_t*)(found_param_container + 0x80);
 	found_param_container = *(uint64_t*)(found_param_container + 0x80);
 
-	uint16_t param_entries = *(uint16_t*)(found_param_container - 0x0C);
-	std::vector<uint32_t> offset_list;
+	// We need at least 2 entries in order to shuffle them around. Some like "NetworkParam" only have 1
+	uint32_t param_entries = *(uint32_t*)(found_param_container - 0x0C);
+	if (param_entries < 2) {
+		return true;
+	};
 
+	std::function<bool(ERRandomiserProperties*, uint64_t, uint32_t, uint32_t, uint32_t)> randomiser_property_proc = randomiser_properties.GetGenerateSpecialProperties_Static(param_name);
 	uint32_t start_offset = (*(uint32_t*)(found_param_container - 0x10) + 15) & -16;
 	uint64_t idrepository = found_param_container + start_offset;
-	for (uint16_t w = 1; w < param_entries; w++) {
-		uint32_t entry = *(uint32_t*)(idrepository + (w * 8) + 4);
+
+	std::vector<uint32_t> offset_list;
+	std::vector<uint32_t> entry_list;
+	for (uint32_t i = 1; i < param_entries; i++) {
+
+		uint32_t entry = *(uint32_t*)(idrepository + (i * 8) + 4);
+
 		if ((int)entry < 0) {
 			continue;
 		};
 
-		offset_list.push_back(entry);
+		// Call any specified special property functions. These are functions specific to a param which can be used to make special changes
+		// for example not randomising a critical entry which might make the game unplayable
+		if (randomiser_property_proc) {
+			if (!std::invoke(randomiser_property_proc, &randomiser_properties, found_param_container , *(uint32_t*)(idrepository + (i * 8)), entry, shuffle + (scramble*2))) {
+				continue;
+			};
+		};
+
+		offset_list.push_back(i);
+		entry_list.push_back(entry);
 	};
 
-	std::shuffle(offset_list.begin(), offset_list.end(), std::default_random_engine(seed));
+	std::shuffle(entry_list.begin(), entry_list.end(), std::default_random_engine(seed));
 
-	for (uint16_t q = 1; q < offset_list.size(); q++) {
-		*(uint32_t*)(idrepository + (q * 8) + 4) = offset_list.at(q - 1);
+	uint8_t param_container_entry_type = *(uint8_t*)(found_param_container + 0x2D);
+	size_t param_entry_size = 0;
+	if (scramble) {
+		switch (param_container_entry_type & 127) {
+		case(2): {
+			param_entry_size = *(uint64_t*)(found_param_container + 0x38) - *(uint64_t*)(found_param_container + 0x34);
+			break;
+		};
+		case(3): {
+			param_entry_size = *(uint64_t*)(found_param_container + 0x48) - *(uint64_t*)(found_param_container + 0x44);
+			break;
+		};
+		case(5): {
+			if (param_container_entry_type < 128) {
+				param_entry_size = *(uint64_t*)(found_param_container + 0x48) - *(uint64_t*)(found_param_container + 0x44);
+				break;
+			};
+			// Otherwise, run case 4
+		};
+		case(4): {
+			if (*(uint8_t*)(found_param_container + 0x2E) & 2) {
+				param_entry_size = *(uint64_t*)(found_param_container + 0x60) - *(uint64_t*)(found_param_container + 0x48);
+			}
+			else {
+				param_entry_size = *(uint64_t*)(found_param_container + 0x48) - *(uint64_t*)(found_param_container + 0x44);
+			};
+			break;
+		};
+		default: break;
+		};
+	};
+
+	size_t param_container_entry_size = entry_list.size();
+	std::vector<uint32_t*> param_container_vector;
+	for (size_t q = 0; q < param_container_entry_size; q++) {
+
+		uint32_t entry = entry_list.at(q);
+		if (shuffle) {
+			*(uint32_t*)(idrepository + (offset_list.at(q) * 8) + 4) = entry;
+		};
+
+		// Stop here if the param isn't to be scrambled
+		if (param_entry_size < 4) {
+			continue;
+		};
+
+		uint32_t* generic_param_container = (uint32_t*)randomiser_properties.GetParamEntry(found_param_container, entry);
+		param_container_vector.push_back(generic_param_container);
+	};
+
+	// The generic randomiser doesn't know the structure of each param, so just scramble it in 4 byte increments
+	param_entry_size /= 4;
+	size_t vector_size = param_container_vector.size();
+	for (uint32_t i = 0; i < param_entry_size; i++) {
+		std::vector<uint32_t> offset_xx;
+		for (size_t q = 0; q < vector_size; q++) {
+			offset_xx.push_back(param_container_vector.at(q)[i]);
+		};
+
+		std::shuffle(offset_xx.begin(), offset_xx.end(), std::default_random_engine(seed+i));
+
+		for (size_t q = 0; q < vector_size; q++) {
+			param_container_vector.at(q)[i] = offset_xx.at(q);
+		};
+
+		offset_xx.clear();
 	};
 
 	return true;
@@ -184,6 +289,12 @@ bool ERRandomiserBase::ShuffleParamEntryTable(std::wstring param_name, uint32_t 
 bool ERRandomiserBase::ShouldRandomiseMapItem(ItemLotParam_map* param_container) {
 
 	bool should_randomise = true;
+
+	// Don't include empty item containers in the randomisation
+	if (!param_container->item_id_array[0]) {
+		return false;
+	};
+
 	for (int i = 0; i < sizeof(ItemLotParam_map::item_id_array) / sizeof(uint32_t); i++) {
 		uint32_t item_id = param_container->item_id_array[i];
 		if (item_id) {
@@ -193,38 +304,45 @@ bool ERRandomiserBase::ShouldRandomiseMapItem(ItemLotParam_map* param_container)
 				// Don't randomise certain keys and crafting materials
 				case(mapitemtype_goods): {
 
-					// Invalid
+					ParamContainer goods_param_container = {};
+					find_equipparamgoods_function(&goods_param_container, item_id);
+					if (!goods_param_container.param_entry) {
+						// Not a valid entry
+						return false;
+					};
+
 					if (item_id < 100) {
+						// Cut / broken / ?GoodsName?
 						return false;
 					};
 
-					// You can't open the first door without this
 					if (item_id == 106) {
+						// You can't open the first door without this
 						return false;
 					};
 
-					// Invalid
 					if ((item_id >= 15000) && (item_id <= 53658)) {
+						// Invalid
 						return false;
 					};
+
 					// Don't randomise keys if selected not to do so
 					if (!random_keys) {
 						for (size_t q = 0; q < excluded_items.size(); q++) {
 							if (excluded_items.at(q) == item_id) {
 								return false;
 							};
-						};
-						
-						// Maps
-						if ((item_id >= 8600) && (item_id <= 8618)) {
-							return false;
-						};
-						
-						// The two runes we need to keep static to preserve progression
-						if ((item_id == static_rune_01) || (item_id == static_rune_02)) {
-							return false;
-						};
+						};				
 
+						if ((item_id >= 8600) && (item_id <= 8618)) {
+							// Maps
+							return false;
+						};
+						
+						if ((item_id == static_rune_01) || (item_id == static_rune_02)) {
+							// The two runes we need to keep static to preserve progression
+							return false;
+						};
 					};
 
 					break;
@@ -281,7 +399,7 @@ bool ERRandomiserBase::FindNeededSignatures() {
 
 	// CS::MapItemManagerImp
 	Signature item_give_hook_signature_map = {
-		"\x4C\x8D\x45\xF4\x48\x8D\x55\x90", 
+		"\x4C\x8D\x45\x34\x48\x8D\x55\x90", 
 		"xxxxxxxx",
 		8,
 		0,
@@ -299,12 +417,15 @@ bool ERRandomiserBase::FindNeededSignatures() {
 	item_give_hook_address_lua = (uint64_t)signature_class.FindSignature(item_give_hook_signature_lua);
 
 	Signature item_give_signature = {
-		"\x40\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\x6C\x24\xB0\x48\x81\xEC\x50\x01\x00\x00\x48\xC7\x45\xC0\xFE\xFF\xFF\xFF",
-		"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-		32,
+		"\x8B\x02\x83\xF8\x0A",
+		"xxxxx",
+		5,
 		0,
 	};
 	item_give_address = (uint64_t)signature_class.FindSignature(item_give_signature);
+	if (item_give_address) {
+		item_give_address -= 82;
+	};
 
 	Signature equip_item_signature = {
 		"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x48\x8D\x51\x10",
@@ -376,6 +497,7 @@ void ERRandomiserBase::RandomiseItemHook(uint64_t map_item_manager, ItemGiveStru
 	};
 
 	// Randomise the contents of the map item object the player has picked up
+	ERRandomiserProperties* randomiser_properties_class = &randomiser_base->randomiser_properties;
 	for (uint32_t i = 0; i < item_count; i++) {
 		ItemInfo* item_struct = &item_info->item_info[i];
 		ItemInfo new_item_struct = ItemInfo();
@@ -383,16 +505,11 @@ void ERRandomiserBase::RandomiseItemHook(uint64_t map_item_manager, ItemGiveStru
 		// TODO: Generate new item
 		new_item_struct = *item_struct;
 
-		// Add new properties depending on the item generated
-		auto property_functions = randomiser_base->randomise_property_functions.find(new_item_struct.item_id >> 28);
-		if (property_functions != randomiser_base->randomise_property_functions.end()) {
+		// Only replace the item with our newly generated one if the item type and properties generated are acceptable
+		if (randomiser_properties_class->GenerateSpecialProperties_Dynamic(&new_item_struct, i)) {
+			*item_struct = new_item_struct;
+		};
 
-			// Only replace the item with our newly generated one if the item type and properties generated are acceptable
-			if (std::invoke(property_functions->second, randomiser_base, &new_item_struct, i)) {
-				*item_struct = new_item_struct;
-			};
-
-		}
 	};
 
 	// Put the newly generated item in the player inventory
@@ -420,276 +537,6 @@ void ERRandomiserBase::RandomiseItemHook(uint64_t map_item_manager, ItemGiveStru
 	};
 
 	return;
-};
-
-bool ERRandomiserBase::RandomiseProperty_Weapon(ItemInfo* item_info, uint32_t entry) {
-
-	EquipParamWeaponParamContainer param_container = EquipParamWeaponParamContainer();
-	find_equipparamweapon_function(&param_container, item_info->item_id & 0x0FFFFFFF);
-
-	EquipParamWeapon* weapon_info = param_container.equipparamweapon_param_entry;
-	if (weapon_info == nullptr) {
-		// Item does not exist
-		return false;
-	};
-
-	// First remove any pre-existing properties
-	item_info->item_id -= (item_info->item_id % 10000);
-
-	bool is_ammo = false;
-	bool special_property_exempt = false;
-	uint32_t weapon_slot_equip = __UINT32_MAX__;
-	switch (weapon_info->weapon_type) {
-
-		// Special case for these, to make sure they don't get special properties later on
-		case(weapon_type_lightbow):
-		case(weapon_type_bow):
-		case(weapon_type_greatbow):
-		case(weapon_type_crossbow):
-		case(weapon_type_ballista):
-		case(weapon_type_glintstone_staff):
-		case(weapon_type_sacred_seal): {
-			weapon_slot_equip = 1;
-			special_property_exempt = true;
-			break;
-		};
-
-		// Equip these in the player's offhand
-		case(weapon_type_small_shield):
-		case(weapon_type_med_shield):
-		case(weapon_type_great_shield): {
-			weapon_slot_equip = 0;
-			break;
-		};
-
-		// Treat these like goods in terms of quantity. Equip in primary arrow slot
-		case(weapon_type_arrow):
-		case(weapon_type_greatarrow): {
-			weapon_slot_equip = 6;
-			is_ammo = true;
-			break;
-		};
-
-		// Treat these like goods in terms of quantity. Equip in primary bolt slot
-		case(weapon_type_bolt):
-		case(weapon_type_greatbolt): {
-			weapon_slot_equip = 7;
-			is_ammo = true;
-			break;
-		};
-
-		// Otherwise, equip in the player's mainhand
-		default: {
-			weapon_slot_equip = 1;
-			break;
-		};
-
-	};
-
-	// If the weapon isn't ammunition, attempt to modify the weapon drop further
-	// otherwise generate a quantity value for the amount of arrows/bolts to give
-	uint32_t ashes_of_war = __UINT32_MAX__;
-	if (!is_ammo) {
-
-		// Reinforce level
-		uint8_t upgrade_lv = 0;
-		uint64_t player_game_data = *(uint64_t*)(*(uint64_t*)(game_data_manager_class) + 0x08);
-		if (player_game_data) {
-
-			uint8_t weapon_level_max = *(uint8_t*)(player_game_data + 0xE2);
-			ParamContainer param_container = ParamContainer();
-			find_equipmtrlsetparam_function(&param_container, weapon_info->material + 1);
-
-			EquipMtrlSetParam* mtrlsetparam = (EquipMtrlSetParam*)param_container.param_entry;
-			if (mtrlsetparam) {
-
-				// Smithing stones are used to upgrade, so maximum will be +25
-				if (mtrlsetparam->upgrade_material_id == 10100) {
-					if (weapon_level_max && weapon_level_max <= 25) {
-						upgrade_lv = main_mod->GetRandomUint(0, weapon_level_max);
-					};
-				}
-				// Somber stones are used to upgrade, so maximum will be +10
-				else if (mtrlsetparam->upgrade_material_id == 10160) {
-					if (weapon_level_max && weapon_level_max <= 25) {
-						weapon_level_max = specialweapon_max_converter.at(weapon_level_max);
-						upgrade_lv = main_mod->GetRandomUint(0, weapon_level_max);
-					};
-					special_property_exempt = true;
-				}
-				// Error
-				else {
-					special_property_exempt = true;
-				};
-
-			};
-
-		};
-
-		// Add weapon special property
-		uint32_t weapon_property = 0;
-		if (!special_property_exempt) {
-			weapon_property = main_mod->GetRandomUint(0, 12) * 100;
-
-			// Should we generate a custom ash of war?
-			if (main_mod->GetRandomUint(0, 100) > 75) {
-				ashes_of_war = 2147483648 | ashes_selection.at(main_mod->GetRandomUint(0, ashes_selection.size() - 1));
-			};
-
-		};
-
-
-		item_info->item_id += (weapon_property + upgrade_lv);
-		item_info->item_quantity = 1;
-	}
-	else {
-		item_info->item_quantity = main_mod->GetRandomUint(1, 50);
-	};
-
-	if (entry >= auto_equip_buffer.size()) {
-		throw std::runtime_error("Attempt to access an element exceeding the maximum size");
-	};
-
-	// Signal a call to the auto equip function after the item has been delivered
-	EquipInfo* equip_info = &auto_equip_buffer.at(entry);
-	equip_info->equipment_slot = weapon_slot_equip;
-	equip_info->item_id = item_info->item_id;
-
-	item_info->item_relayvalue = 0;
-	item_info->item_ashes_of_war = ashes_of_war;
-
-	return true;
-};
-
-bool ERRandomiserBase::RandomiseProperty_Armour(ItemInfo* item_info, uint32_t entry) {
-
-	EquipParamProtectorParamContainer param_container = EquipParamProtectorParamContainer();
-	find_equipparamprotector_function(&param_container, item_info->item_id & 0x0FFFFFFF);
-
-	// Get the param entry for the armour in question
-	EquipParamProtector* protector_info = param_container.equipparamprotector_param_entry;
-	if (protector_info == nullptr) {
-		// Item does not exist
-		return false;
-	};
-
-	// Sort what "type" of armour it is (helmet, gloves, etc)
-	uint32_t equipment_slot_id = 0;
-	switch (protector_info->protector_type) {
-		case(protector_type_head): {
-			equipment_slot_id = 12;
-			break;
-		};
-		case(protector_type_chest): {
-			equipment_slot_id = 13;
-			break;
-		};
-		case(protector_type_legs): {
-			equipment_slot_id = 14;
-			break;
-		};
-		case(protector_type_hands): {
-			equipment_slot_id = 15;
-			break;
-		};
-		default: {
-			// Cannot fit item
-			return false;
-		};
-	};
-	
-	if (entry >= auto_equip_buffer.size()) {
-		throw std::runtime_error("Attempt to access an element exceeding the maximum size");
-	};
-
-	// Signal a call to the auto equip function after the item has been delivered
-	EquipInfo* equip_info = &auto_equip_buffer.at(entry);
-	equip_info->equipment_slot = equipment_slot_id;
-	equip_info->item_id = item_info->item_id;
-
-	// Constants
-	item_info->item_quantity = 1;
-	item_info->item_relayvalue = 0;
-	item_info->item_ashes_of_war = __UINT32_MAX__;
-	return true;
-};
-
-bool ERRandomiserBase::RandomiseProperty_Accessory(ItemInfo* item_info, uint32_t entry) {
-
-	// Grab the amount of talisman pouches the player owns
-	uint64_t player_data = *(uint64_t*)(*(uint64_t*)(game_data_manager_class) + 0x08);
-	uint32_t equip_slot = __UINT32_MAX__;
-	if (player_data) {
-		uint8_t max_talisman_count = *(uint8_t*)(player_data + 0xC6);
-		max_talisman_count = max_talisman_count <= 4 ? max_talisman_count : 4;
-		equip_slot = main_mod->GetRandomUint(0, max_talisman_count) + 17;
-	};
-
-	if (equip_slot != __UINT32_MAX__) {
-		// Signal a call to the auto equip function after the item has been delivered
-		EquipInfo* equip_info = &auto_equip_buffer.at(entry);
-		equip_info->equipment_slot = equip_slot;
-		equip_info->item_id = item_info->item_id;
-	};
-
-	// Constants
-	item_info->item_quantity = 1;
-	item_info->item_ashes_of_war = __UINT32_MAX__;
-	item_info->item_relayvalue = 0;
-	return true;
-};
-
-bool ERRandomiserBase::RandomiseProperty_Goods(ItemInfo* item_info, uint32_t entry) {
-
-	// Lookup EquipParamGoods
-	// key item? Where is it sorted?
-	uint32_t item_id_holder = item_info->item_id;
-	ParamContainer param_container = ParamContainer();
-	find_equipparamgoods_function(&param_container, item_id_holder & 0x0FFFFFFF);
-
-	EquipParamGoods* goods_info = (EquipParamGoods*)param_container.param_entry;
-	if (goods_info == nullptr) {
-		// Item does not exist
-		return false;
-	};
-
-	// Generate a quantity for the goods. If the max is 1 then just give 1
-	uint16_t anticipated_quantity = 1;
-	uint16_t sensible_max_quantity = goods_info->max_inventory;
-	switch (goods_info->item_type) {
-		case(itemtype_tools): {}
-		case(itemtype_sorceries): {}
-		case(itemtype_ashes): {}
-		case(itemtype_info): {}
-		case(itemtype_incantations): {
-			sensible_max_quantity = 1;
-			break;
-		};
-		default: break;
-	};
-
-	// Don't touch the quantity of runes
-	if ((item_id_holder >= 0x40000B54) && (item_id_holder <= 0x40000BAE)) {
-		sensible_max_quantity = item_info->item_quantity;
-		anticipated_quantity = item_info->item_quantity;
-	};
-
-	// Don't touch the quantity of critical items such as talisman pouches
-	if ((item_id_holder >= 0x4000251C) && (item_id_holder <= 0x40002760)) {
-		sensible_max_quantity = item_info->item_quantity;
-		anticipated_quantity = item_info->item_quantity;
-	};
-
-	if (anticipated_quantity < sensible_max_quantity) {
-		uint32_t max_gen = sensible_max_quantity > 5 ? 5 : sensible_max_quantity;
-		anticipated_quantity = main_mod->GetRandomUint(anticipated_quantity, max_gen);
-	};
-
-	// Constants
-	item_info->item_quantity = anticipated_quantity;
-	item_info->item_relayvalue = 0;
-	item_info->item_ashes_of_war = __UINT32_MAX__;
-	return true;
 };
 
 // Sigscan

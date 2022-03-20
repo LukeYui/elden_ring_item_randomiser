@@ -22,6 +22,9 @@
     <Filter Include="Resource Files\INIReader">
       <UniqueIdentifier>{c6e2b152-95d2-4e51-904a-9f8c58690653}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\RandomiserProperties">
+      <UniqueIdentifier>{e490b0ac-a3aa-49cb-a63e-81da67ca4fe6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -53,6 +56,9 @@
     </ClCompile>
     <ClCompile Include="INIReader\INIReader.cpp">
       <Filter>Resource Files\INIReader</Filter>
+    </ClCompile>
+    <ClCompile Include="RandomiserProperties\randomiser_properties.cpp">
+      <Filter>Source Files\RandomiserProperties</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +97,12 @@
     </ClInclude>
     <ClInclude Include="INIReader\INIReader.h">
       <Filter>Resource Files\INIReader</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomiserProperties\randomiser_properties.h">
+      <Filter>Source Files\RandomiserProperties</Filter>
+    </ClInclude>
+    <ClInclude Include="item_randomiser_globals.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

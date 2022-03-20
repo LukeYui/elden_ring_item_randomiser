@@ -64,7 +64,8 @@ bool ERItemRandomiser::GetUserPreferences() {
 	header_segment = "RANDOMISE";
 	for (size_t q = 0; q < main_mod->param_container_names.size(); q++) {
 		std::string segment(main_mod->param_container_names.at(q).begin(), main_mod->param_container_names.at(q).end());
-		SetParamRandomisationPreference(main_mod->param_container_names.at(q), option_reader.GetBoolean(header_segment, segment, false));
+		RandomiseType randomise_type = static_cast<RandomiseType>(option_reader.GetInteger(header_segment, segment, 0));
+		SetParamRandomisationPreference(main_mod->param_container_names.at(q), randomise_type);
 	};
 
 	// Seed
@@ -94,7 +95,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 		return true;
 	}
 	else {
-		char file_contents[50] = {};
+		char file_contents[MAX_PATH] = {};
 		DWORD size = 0;
 		if (!ReadFile((HANDLE)seed_file, file_contents, sizeof(file_contents), &size, nullptr) || size < 16) {
 
@@ -115,17 +116,17 @@ void ERItemRandomiser::RequestItemListSave(bool request_save) {
 	return;
 };
 
-void ERItemRandomiser::SetParamRandomisationPreference(std::wstring param_name, bool option) {
+void ERItemRandomiser::SetParamRandomisationPreference(std::wstring param_name, RandomiseType option) {
 	param_container_random_preferences.emplace(param_name, option);
 	return;
 };
 
-bool ERItemRandomiser::GetParamRandomisationPreference(std::wstring param_name) {
+RandomiseType ERItemRandomiser::GetParamRandomisationPreference(std::wstring param_name) {
 	auto random_preference = param_container_random_preferences.find(param_name);
 	if (random_preference != param_container_random_preferences.end()) {
 		return random_preference->second;
 	}
-	return false;
+	return randomisetype_none;
 };
 
 uint32_t ERItemRandomiser::GetRandomUint(uint32_t min, uint32_t max) {

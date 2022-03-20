@@ -18,13 +18,20 @@ enum UserPreferences {
 	option_randomisekeys = 1 << 1,
 };
 
+enum RandomiseType : uint8_t  {
+	randomisetype_none = 0,
+	randomisetype_shuffle = 1,
+	randomisetype_scramble = 2,
+	randomisetype_butcher = 3,
+};
+
 class ERItemRandomiser {
 public:
 	void RunSaveListener();
 	bool GetUserPreferences();
 	void RequestItemListSave(bool request_save = true); 
-	void SetParamRandomisationPreference(std::wstring param_name, bool option);
-	bool GetParamRandomisationPreference(std::wstring param_name);
+	void SetParamRandomisationPreference(std::wstring param_name, RandomiseType option);
+	RandomiseType GetParamRandomisationPreference(std::wstring param_name);
 	uint32_t GetRandomUint(uint32_t min, uint32_t max);
 	uint32_t GetSeededRandomUint(uint32_t min, uint32_t max, uint32_t seed);
 
@@ -235,5 +242,5 @@ private:
 	bool save_manager_wake;
 	std::mutex save_request_mutex;
 	std::condition_variable save_request_wait;
-	std::map<std::wstring, bool> param_container_random_preferences;
+	std::map<std::wstring, RandomiseType> param_container_random_preferences;
 };
