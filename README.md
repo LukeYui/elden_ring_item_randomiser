@@ -8,6 +8,10 @@ Works by shuffling ItemLotParam_map and ItemLotParam_enemy on game startup. With
 * Some key items are needed for progression and should not be randomised
 * Materials such as berries and flowers regenerate, so are excluded to discourage easy re-rerolling of items and preserve the crafting system
 * Invalid items (such as placeholders) have been removed
+
+## Generic param randomisation
+
+One feature is generic param randomisation. This lets users either shuffle or scramble any game param of their choice. There are over 180 game params in Elden Ring
  
 ## Libraries used:
 
