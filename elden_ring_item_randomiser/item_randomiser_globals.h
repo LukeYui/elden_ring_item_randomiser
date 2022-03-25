@@ -141,6 +141,34 @@ struct ItemLotParam_map {
 	uint32_t item_completeevent_type[8];
 };
 
+struct ItemLotParam_enemy {
+	uint32_t item_id_array[8];
+	MapItemType item_type_array[8];
+	uint16_t unk_array_01[8];
+	uint16_t unk_array_02[8];
+	uint32_t item_completeevent_type[8];
+};
+
+struct ShopLineupParam {
+	uint32_t item_id;
+	uint32_t item_cost;
+	uint32_t equipmtrlsetparam_entryid; // Anything other than -1 means the item is an upgrade and needs materials
+	uint32_t remaining_leftinstock_id;  // Will remember what you've bought previously, and subtract it from the item quantity
+	uint32_t is_release_eventflag_id;   // If this event id specified is not complete, the item will not appear
+	uint16_t item_quantity;
+	uint8_t unk_01;
+	uint8_t item_type;	   // 0 = Weapon | 1 = Armour | 2 = Accessory | 3 = Goods | 4 = Gem
+	uint8_t currency_type; // 0 = Runes | 1 = Dragon hearts
+	uint8_t unk_02;
+	uint8_t unk_03;
+	uint8_t unk_04;
+	uint32_t unk_05;
+	uint32_t unk_06;
+	uint32_t unk_07;
+	uint32_t fdp_msg;
+	uint16_t fdp_icon;
+};
+
 struct ParamContainer {
 	uint32_t entry_id = __UINT32_MAX__;
 	void* param_entry = nullptr;

@@ -8,6 +8,8 @@
 #include "INIReader/INIReader.h"
 #include "Hooks/item_randomiser_hooks.h"
 
+#define ITEM_DEBUG 0
+
 namespace ERItemRandomiserLoader {
 	void CreateModFunctions();
 };
@@ -16,6 +18,7 @@ enum UserPreferences {
 	option_none = 0,
 	option_autoequip = 1 << 0,
 	option_randomisekeys = 1 << 1,
+	option_randomiseestusupgrades = 1 << 2,
 };
 
 enum RandomiseType : uint8_t  {

@@ -36,6 +36,33 @@ bool ERRandomiserProperties::RandomiseProperty_EquipParamGoods(uint64_t param_co
 	return true;
 };
 
+bool ERRandomiserProperties::RandomiseProperty_ItemLotParam_enemy(uint64_t param_container_base, uint32_t param_id, uint32_t param_offsetid, uint32_t randomiser_action) {
+
+	if (param_id == 2) {
+		// Flask of sacred tears (upgraded, lots!):
+		// 1010,
+		// 1010,
+		// 1013,
+		// 1013,
+		// 1023,
+		// 1001,
+		// 1001,
+		return false;
+	}
+	else if (param_id == 607200000) {
+		// Empty container
+		return false;
+	}
+
+	else if (param_id == 438240000) {
+		// Flask of sacred tears
+		// 1000,
+		return false;
+	};
+
+	return true;
+};
+
 // Used to generate properties for weapons, armour, rings, and goods *as you pick them up*
 bool ERRandomiserProperties::GenerateSpecialProperties_Dynamic(ItemInfo* item_info, uint32_t entry) {
 	auto property_functions = randomise_dynamic_property_functions.find(item_info->item_id >> 28);
@@ -248,6 +275,9 @@ bool ERRandomiserProperties::RandomiseProperty_Accessory(ItemInfo* item_info, ui
 	};
 
 	if (equip_slot != __UINT32_MAX__) {
+		if (entry >= auto_equip_buffer->size()) {
+			throw std::runtime_error("Attempt to access an element exceeding the maximum size");
+		};
 		// Signal a call to the auto equip function after the item has been delivered
 		EquipInfo* equip_info = &auto_equip_buffer->at(entry);
 		equip_info->equipment_slot = equip_slot;

@@ -19,7 +19,7 @@ public:
 
 	};
 
-	ERRandomiserProperties(uint64_t game_data_manager_class, std::array<EquipInfo, 7>* auto_equip_buffer, get_equipparamweapon_entry* find_equipparamweapon_function,
+	ERRandomiserProperties(uint64_t game_data_manager_class, std::array<EquipInfo, 11>* auto_equip_buffer, get_equipparamweapon_entry* find_equipparamweapon_function,
 		get_equipparamprotector_entry* find_equipparamprotector_function, get_equipparamgoods_entry* find_equipparamgoods_function, get_equipmtrlsetparam_entry* find_equipmtrlsetparam_function) {
 		this->game_data_manager_class = game_data_manager_class;
 		this->auto_equip_buffer = auto_equip_buffer;
@@ -125,6 +125,9 @@ public:
 		// Properites: Statically generated: std::wstring (ParamName)		
 		randomise_static_property_functions.emplace(L"EquipParamWeapon", &ERRandomiserProperties::RandomiseProperty_EquipParamWeapon);
 		randomise_static_property_functions.emplace(L"EquipParamGoods", &ERRandomiserProperties::RandomiseProperty_EquipParamGoods);
+		randomise_static_property_functions.emplace(L"ItemLotParam_enemy", &ERRandomiserProperties::RandomiseProperty_ItemLotParam_enemy);
+
+		//40002134
 
 		// Properties: Runtime generated: 0 = Weapon type | 1 = Armour type | 2 = Accessory type | 4 = Goods type
 		randomise_dynamic_property_functions.emplace(0, &ERRandomiserProperties::RandomiseProperty_Weapon);
@@ -139,7 +142,7 @@ private:
 	get_equipparamprotector_entry* find_equipparamprotector_function;
 	get_equipparamgoods_entry* find_equipparamgoods_function;
 	get_equipmtrlsetparam_entry* find_equipmtrlsetparam_function;
-	std::array<EquipInfo, 7>* auto_equip_buffer;
+	std::array<EquipInfo, 11>* auto_equip_buffer;
 	std::array<uint8_t, 27> specialweapon_max_converter;
 	std::array<uint32_t, 91> ashes_selection;
 	
@@ -147,6 +150,7 @@ private:
 	std::map<std::wstring, std::function<bool(ERRandomiserProperties*, uint64_t, uint32_t, uint32_t, uint32_t)>> randomise_static_property_functions;
 	bool RandomiseProperty_EquipParamWeapon(uint64_t param_container_base, uint32_t param_id, uint32_t param_offsetid, uint32_t randomiser_action);
 	bool RandomiseProperty_EquipParamGoods(uint64_t param_container_base, uint32_t param_id, uint32_t param_offsetid, uint32_t randomiser_action);
+	bool RandomiseProperty_ItemLotParam_enemy(uint64_t param_container_base, uint32_t param_id, uint32_t param_offsetid, uint32_t randomiser_action);
 
 	// Properties: Runtime generated
 	std::map<uint32_t, bool(ERRandomiserProperties::*)(ItemInfo*, uint32_t)> randomise_dynamic_property_functions;
@@ -154,5 +158,4 @@ private:
 	bool RandomiseProperty_Armour(ItemInfo* item_info, uint32_t entry);
 	bool RandomiseProperty_Accessory(ItemInfo* item_info, uint32_t entry);
 	bool RandomiseProperty_Goods(ItemInfo* item_info, uint32_t entry);
-
 };

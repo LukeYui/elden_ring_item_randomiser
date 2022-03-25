@@ -167,6 +167,7 @@
     <ClCompile Include="MinHook\src\hook.c" />
     <ClCompile Include="MinHook\src\trampoline.c" />
     <ClCompile Include="RandomiserProperties\randomiser_properties.cpp" />
+    <ClCompile Include="Randomiser\randomiser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hooks\item_randomiser_hooks.h" />
@@ -183,6 +184,7 @@
     <ClInclude Include="MinHook\src\HDE\table64.h" />
     <ClInclude Include="MinHook\src\trampoline.h" />
     <ClInclude Include="RandomiserProperties\randomiser_properties.h" />
+    <ClInclude Include="Randomiser\randomiser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

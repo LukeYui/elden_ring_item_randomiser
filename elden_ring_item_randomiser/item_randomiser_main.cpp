@@ -21,11 +21,16 @@ void ERItemRandomiser::RunSaveListener() {
 
 	using namespace std::chrono_literals;
 
+	if (ITEM_DEBUG) {
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	};
+
 	if (!GetUserPreferences()) {
 		//
 	};
 
-	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, randomiser_seed);
+	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, user_preferences & option_randomiseestusupgrades, randomiser_seed);
 	if (!hook_class.CreateMemoryEdits()) {
 		//
 		return;
@@ -59,6 +64,8 @@ bool ERItemRandomiser::GetUserPreferences() {
 	std::string header_segment = "MOD";
 	user_preferences = option_reader.GetBoolean(header_segment, "autoequip", true) ? static_cast<UserPreferences>(user_preferences | option_autoequip) : user_preferences;
 	user_preferences = option_reader.GetBoolean(header_segment, "randomisekeys", false) ? static_cast<UserPreferences>(user_preferences | option_randomisekeys) : user_preferences;
+	user_preferences = option_reader.GetBoolean(header_segment, "randomiseflaskmaterials", true) ? static_cast<UserPreferences>(user_preferences | option_randomiseestusupgrades) : user_preferences;
+
 
 	// Param randomisation preferences
 	header_segment = "RANDOMISE";

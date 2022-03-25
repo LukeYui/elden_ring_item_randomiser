@@ -7,8 +7,7 @@
 #include <vector>
 
 #include "../MinHook/include/MinHook.h"
-#include "../RandomiserProperties/randomiser_properties.h"
-//#include "../item_randomiser_globals.h"
+#include "../Randomiser/randomiser.h"
 
 struct Signature {
 	const char* signature;
@@ -36,9 +35,11 @@ public:
 
 	};
 
-	ERRandomiserBase(bool is_auto_equip, bool is_random_keys, uint64_t seed) {
+	ERRandomiserBase(bool is_auto_equip, bool is_random_keys, bool is_randomise_estusupgrade, uint64_t seed) {
 		auto_equip = is_auto_equip;
 		random_keys = is_random_keys;
+		random_keys = is_random_keys;
+		randomise_estusupgrade = is_randomise_estusupgrade;
 		mapitem_seed = (uint32_t)seed;
 		enemyitem_seed = (uint32_t)(seed >> 32 ^ mapitem_seed);
 		randomkey_seed = 0 - (mapitem_seed + enemyitem_seed);
@@ -62,43 +63,21 @@ public:
 		minhook_active = MH_UNKNOWN;
 		signature_class = SigScan();
 		auto_equip_buffer.fill(EquipInfo());
-		static_runes = {
-			8148,	// Godrick's Great Rune
-			8149,	// Radahn's Great Rune
-			8151,	// Rykard's Great Rune
-			10080,  // Rennala's Great Rune
-		};
-		excluded_items = {
-			130,  // Spectral Steed Whistle
-			1001, // Flask of Crimson Tears (Tutorial)
-			1051, // Flask of Cerulean Tears
-			8105, // Dectus Medallion (Left)
-			8106, // Dectus Medallion (Right)
-			8107, // Rold Medallion
-			8109, // Academy Glintstone Key
-			8010, // Rusty key
-			8158, // Spirit Calling Bell
-			8171, // Chrysalids' Memento
-			8175, // Haligtree Secret Medallion (Left)
-			8176, // Haligtree Secret Medallion (Right)
-			8590, // Whetstone Knife
-		};
-		randomiser_properties = ERRandomiserProperties();
+		randomiser = ERRandomiser();
+
 	};
 
 	~ERRandomiserBase() {
-		//MH_Uninitialize();
+		//MH_Uninitialize() ;
 	};
 
 
 private:
 	bool FindNeededSignatures();
-	bool Shuffle();
-	bool ShuffleParamEntryTable(uint64_t solo_param_repository, std::wstring param_name, uint32_t seed, bool shuffle, bool scramble);
-	bool ShouldRandomiseMapItem(ItemLotParam_map* param_container);
 	static void RandomiseItemHook(uint64_t map_item_manager, ItemGiveStruct* item_info, void* item_details);
 	uint32_t auto_equip;
 	uint32_t random_keys;
+	uint32_t randomise_estusupgrade;
 	uint32_t mapitem_seed;
 	uint32_t enemyitem_seed;
 	uint32_t randomkey_seed;
@@ -122,8 +101,6 @@ private:
 	void* save_extension_address;
 	MH_STATUS minhook_active;
 	SigScan signature_class;
-	std::array<EquipInfo, 7> auto_equip_buffer;
-	std::array<uint32_t, 4> static_runes;
-	std::array<uint32_t, 13> excluded_items;
-	ERRandomiserProperties randomiser_properties;
+	std::array<EquipInfo, 11> auto_equip_buffer;
+	ERRandomiser randomiser;
 };

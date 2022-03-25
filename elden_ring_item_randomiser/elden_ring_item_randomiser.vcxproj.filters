@@ -25,6 +25,9 @@
     <Filter Include="Source Files\RandomiserProperties">
       <UniqueIdentifier>{e490b0ac-a3aa-49cb-a63e-81da67ca4fe6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Randomiser">
+      <UniqueIdentifier>{beeff5ed-64b1-4d1a-a9b6-5ef6e2f7c4f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="RandomiserProperties\randomiser_properties.cpp">
       <Filter>Source Files\RandomiserProperties</Filter>
+    </ClCompile>
+    <ClCompile Include="Randomiser\randomiser.cpp">
+      <Filter>Source Files\Randomiser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -103,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="item_randomiser_globals.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Randomiser\randomiser.h">
+      <Filter>Source Files\Randomiser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
