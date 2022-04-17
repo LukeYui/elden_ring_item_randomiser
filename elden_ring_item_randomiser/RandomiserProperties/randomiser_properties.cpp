@@ -319,14 +319,39 @@ bool ERRandomiserProperties::RandomiseProperty_Goods(ItemInfo* item_info, uint32
 	default: break;
 	};
 
-	// Don't touch the quantity of runes
-	if ((item_id_holder >= 0x40000B54) && (item_id_holder <= 0x40000BAE)) {
-		sensible_max_quantity = item_info->item_quantity;
-		anticipated_quantity = item_info->item_quantity;
+	uint32_t item_id_raw = item_id_holder & 0x0FFFFFFF;
+	UserPreferences user_options = main_mod->GetToggleOptions();
+
+	// Don't estus flask upgrade materials if selected not to do so
+	if (!(user_options & option_randomiseestusupgrades)) {
+		if ((item_id_raw == 10010) || (item_id_raw == 10020)) {
+			sensible_max_quantity = item_info->item_quantity;
+			anticipated_quantity = item_info->item_quantity;
+		};
 	};
 
+	// Don't touch upgrade materials if selected not to do so
+	if (!(user_options & option_randomisemtrlupgrades)) {
+		if (item_id_raw >= 10100 && item_id_raw <= 10919) {
+			sensible_max_quantity = item_info->item_quantity;
+			anticipated_quantity = item_info->item_quantity;
+		};
+	};
+
+	// Don't touch the quantity of flasks
+	if ((item_id_holder >= 0x400003E8) && (item_id_holder <= 0x40000433)) {
+		sensible_max_quantity = item_info->item_quantity;
+		anticipated_quantity = item_info->item_quantity;
+	}
+
+	// Don't touch the quantity of runes
+	else if ((item_id_holder >= 0x40000B54) && (item_id_holder <= 0x40000BAE)) {
+		sensible_max_quantity = item_info->item_quantity;
+		anticipated_quantity = item_info->item_quantity;
+	}
+
 	// Don't touch the quantity of critical items such as talisman pouches
-	if ((item_id_holder >= 0x4000251C) && (item_id_holder <= 0x40002760)) {
+	else if ((item_id_holder >= 0x4000251C) && (item_id_holder <= 0x40002760)) {
 		sensible_max_quantity = item_info->item_quantity;
 		anticipated_quantity = item_info->item_quantity;
 	};

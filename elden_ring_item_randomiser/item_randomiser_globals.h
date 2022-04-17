@@ -4,6 +4,14 @@
 #include <functional>
 #include <string>
 
+enum UserPreferences {
+	option_none = 0,
+	option_autoequip = 1 << 0,
+	option_randomisekeys = 1 << 1,
+	option_randomiseestusupgrades = 1 << 2,
+	option_randomisemtrlupgrades = 1 << 3,
+};
+
 struct EquipInfo {
 	uint32_t item_id = -1;
 	uint32_t inventory_slot = -1;
@@ -156,17 +164,16 @@ struct ShopLineupParam {
 	uint32_t remaining_leftinstock_id;  // Will remember what you've bought previously, and subtract it from the item quantity
 	uint32_t is_release_eventflag_id;   // If this event id specified is not complete, the item will not appear
 	uint16_t item_quantity;
-	uint8_t unk_01;
+	uint8_t dummy_01;
 	uint8_t item_type;	   // 0 = Weapon | 1 = Armour | 2 = Accessory | 3 = Goods | 4 = Gem
 	uint8_t currency_type; // 0 = Runes | 1 = Dragon hearts
-	uint8_t unk_02;
-	uint8_t unk_03;
-	uint8_t unk_04;
-	uint32_t unk_05;
-	uint32_t unk_06;
-	uint32_t unk_07;
-	uint32_t fdp_msg;
-	uint16_t fdp_icon;
+	uint8_t dummy_02;
+	uint16_t set_num;
+	uint32_t value_add;
+	float value_magnification;
+	uint32_t icon_id;
+	uint32_t name_msg_id;
+	uint16_t menu_title_msg_id;
 };
 
 struct ParamContainer {

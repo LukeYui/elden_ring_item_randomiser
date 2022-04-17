@@ -30,7 +30,8 @@ void ERItemRandomiser::RunSaveListener() {
 		//
 	};
 
-	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, user_preferences & option_randomiseestusupgrades, randomiser_seed);
+	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, user_preferences & option_randomiseestusupgrades,
+		user_preferences & option_randomisemtrlupgrades, randomiser_seed);
 	if (!hook_class.CreateMemoryEdits()) {
 		//
 		return;
@@ -65,7 +66,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 	user_preferences = option_reader.GetBoolean(header_segment, "autoequip", true) ? static_cast<UserPreferences>(user_preferences | option_autoequip) : user_preferences;
 	user_preferences = option_reader.GetBoolean(header_segment, "randomisekeys", false) ? static_cast<UserPreferences>(user_preferences | option_randomisekeys) : user_preferences;
 	user_preferences = option_reader.GetBoolean(header_segment, "randomiseflaskmaterials", true) ? static_cast<UserPreferences>(user_preferences | option_randomiseestusupgrades) : user_preferences;
-
+	user_preferences = option_reader.GetBoolean(header_segment, "randomiseupgradematerials", true) ? static_cast<UserPreferences>(user_preferences | option_randomisemtrlupgrades) : user_preferences;
 
 	// Param randomisation preferences
 	header_segment = "RANDOMISE";
@@ -147,4 +148,8 @@ uint32_t ERItemRandomiser::GetSeededRandomUint(uint32_t min, uint32_t max, uint3
 	std::mt19937 random_number_generator(seed);
 	std::uniform_int_distribution<std::mt19937::result_type> random_number_distributer(min, max);
 	return random_number_distributer(random_number_generator);
+};
+
+UserPreferences ERItemRandomiser::GetToggleOptions() {
+	return user_preferences;
 };

@@ -15,16 +15,15 @@ bool ERRandomiserBase::CreateMemoryEdits() {
 		return false;
 	};
 
-	game_data_manager_class = game_data_manager_address + *(uint32_t*)((char*)game_data_manager_address + 3) + 7;
-	solo_param_repository_class = solo_param_repository_address + *(uint32_t*)((char*)solo_param_repository_address + 3) + 7;
+	game_data_manager_class = game_data_manager_address + *(int*)((char*)game_data_manager_address + 3) + 7;
+	solo_param_repository_class = solo_param_repository_address + *(int*)((char*)solo_param_repository_address + 3) + 7;
 
 	// Change the save file extension to prevent accidently uploading saves coming back online
 	memcpy(save_extension_address, L".rd2", 8);
 
-
 	//bool is_random_keys, bool is_randomise_estusupgrade, uint64_t seed, uint64_t solo_param_repository_class, get_equipparamgoods_entry* find_equipparamgoods_function
 
-	randomiser = ERRandomiser(random_keys, randomise_estusupgrade, mapitem_seed, enemyitem_seed, solo_param_repository_class, find_equipparamgoods_function);
+	randomiser = ERRandomiser(random_keys, randomise_estusupgrade, randomise_mtrlupgrade, mapitem_seed, enemyitem_seed, solo_param_repository_class, find_equipparamgoods_function);
 
 	*randomiser.GetSpecialPropertyClass() = ERRandomiserProperties(game_data_manager_class, &auto_equip_buffer, find_equipparamweapon_function,
 		find_equipparamprotector_function, find_equipparamgoods_function, find_equipmtrlsetparam_function);

@@ -13,16 +13,17 @@ public:
 	bool Shuffle();
 
 
-	bool ShouldRandomiseMapItem(ItemLotParam_map* param_container);
+	bool ShouldRandomiseMapItem(ItemLotParam_map* param_container, uint32_t mapitem_id);
 	ERRandomiserProperties* GetSpecialPropertyClass();
 
 	ERRandomiser() {
 
 	};
 
-	ERRandomiser(bool is_random_keys, bool is_randomise_estusupgrade, uint32_t mapitem_seed, uint32_t enemyitem_seed, uint64_t solo_param_repository_class, get_equipparamgoods_entry* find_equipparamgoods_function) {
+	ERRandomiser(bool is_random_keys, bool is_randomise_estusupgrade, bool is_randomise_mtrlupgrade, uint32_t mapitem_seed, uint32_t enemyitem_seed, uint64_t solo_param_repository_class, get_equipparamgoods_entry* find_equipparamgoods_function) {
 		this->random_keys = is_random_keys;
 		this->randomise_estusupgrade = is_randomise_estusupgrade;
+		this->randomise_materials = is_randomise_mtrlupgrade;
 		this->mapitem_seed = mapitem_seed;
 		this->enemyitem_seed = enemyitem_seed;
 		this->randomkey_seed = 0 - (mapitem_seed + enemyitem_seed);
@@ -38,11 +39,14 @@ public:
 			130,  // Spectral Steed Whistle
 			1001, // Flask of Crimson Tears (Tutorial)
 			1051, // Flask of Cerulean Tears
+			1240, // Shabriri Grape
+			2090, // Deathroot
 			8010, // Rusty key
 			8105, // Dectus Medallion (Left)
 			8106, // Dectus Medallion (Right)
 			8107, // Rold Medallion
 			8109, // Academy Glintstone Key
+			8174, // Academy Glintstone Key (2)
 			8111, // Carian Inverted Statue
 			8121, // Dark Moon Ring
 			8134, // Drawing-Room Key
@@ -53,8 +57,36 @@ public:
 			8175, // Haligtree Secret Medallion (Left)
 			8176, // Haligtree Secret Medallion (Right)
 			8186, // Imbued key
+			8197, // Sewer-Gaol key
 			8199, // Discarded Palace Key
 			8590, // Whetstone Knife
+			8162, // Gold sewing needle
+			8129, // Serpent's amnion
+			8196, // Unalloyed gold needle
+			8142, // Amber starlight
+			8166, // Amber Draught
+			8222, // Alexander's innards
+			8131, // Irina's letter
+			8173, // Letter to bernahl
+			8128, // Tonic of Forgetfulness
+			8137, // Volcano manor 
+			8130, // Rya's necklace
+			8154, // Lord of Blood's favor
+			8168, // Dancer's castanets
+			8169, // Sellian Sealbreaker
+			8189, // Iji's confession
+			8979, // Beast eye
+			8193, // Seedbed curse
+			8126, // Figerprint grape
+			8172, // Black knifeprint
+			8164, // Seluvis's Potion
+			8997, // Valkyrie's Prosthesis
+			8980, // Weathered dagger
+			8143, // Seluvi's introduction
+			8144, // Sellen's primal glintstone
+			8159, // Fingerslayer blade
+			8191, // Cursemark of death
+			8194, // Stormhawk king
 		};
 		this->solo_param_repository = solo_param_repository_class;
 		this->equipparamgoods_function = find_equipparamgoods_function;
@@ -249,13 +281,14 @@ public:
 private:
 	uint32_t random_keys;
 	uint32_t randomise_estusupgrade;
+	uint32_t randomise_materials;
 	uint32_t mapitem_seed;
 	uint32_t enemyitem_seed;
 	uint32_t randomkey_seed;
 	uint32_t static_rune_01;
 	uint32_t static_rune_02;
 	std::array<uint32_t, 4> static_runes;
-	std::array<uint32_t, 20> excluded_items;
+	std::array<uint32_t, 51> excluded_items;
 	uint64_t solo_param_repository;
 	get_equipparamgoods_entry* equipparamgoods_function;
 	ERRandomiserProperties randomiser_properties;

@@ -14,13 +14,6 @@ namespace ERItemRandomiserLoader {
 	void CreateModFunctions();
 };
 
-enum UserPreferences {
-	option_none = 0,
-	option_autoequip = 1 << 0,
-	option_randomisekeys = 1 << 1,
-	option_randomiseestusupgrades = 1 << 2,
-};
-
 enum RandomiseType : uint8_t  {
 	randomisetype_none = 0,
 	randomisetype_shuffle = 1,
@@ -37,6 +30,7 @@ public:
 	RandomiseType GetParamRandomisationPreference(std::wstring param_name);
 	uint32_t GetRandomUint(uint32_t min, uint32_t max);
 	uint32_t GetSeededRandomUint(uint32_t min, uint32_t max, uint32_t seed);
+	UserPreferences GetToggleOptions();
 
 	ERItemRandomiser() {
 		hook_class = {};

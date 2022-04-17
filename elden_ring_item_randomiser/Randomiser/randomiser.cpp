@@ -67,7 +67,7 @@ bool ERRandomiser::ShuffleItemLotParam_map(uint64_t solo_param_repository, std::
 
 		uint32_t container_offset = (entry + 3) * 3;
 		ItemLotParam_map* param_container = reinterpret_cast<ItemLotParam_map*>(itemlotparam_map + *(uint64_t*)(itemlotparam_map + (container_offset * 8)));
-		if (!ShouldRandomiseMapItem(param_container)) {
+		if (!ShouldRandomiseMapItem(param_container, mapitem_id)) {
 			continue;
 		};
 
@@ -141,7 +141,7 @@ bool ERRandomiser::ShuffleShopLineupParam(uint64_t solo_param_repository, std::w
 
 };
 
-bool ERRandomiser::ShouldRandomiseMapItem(ItemLotParam_map* param_container) {
+bool ERRandomiser::ShouldRandomiseMapItem(ItemLotParam_map* param_container, uint32_t mapitem_id) {
 
 	bool should_randomise = true;
 
@@ -158,7 +158,6 @@ bool ERRandomiser::ShouldRandomiseMapItem(ItemLotParam_map* param_container) {
 
 				// Don't randomise certain keys and crafting materials
 			case(mapitemtype_goods): {
-
 				ParamContainer goods_param_container = {};
 				equipparamgoods_function(&goods_param_container, item_id);
 				if (!goods_param_container.param_entry) {
@@ -176,6 +175,11 @@ bool ERRandomiser::ShouldRandomiseMapItem(ItemLotParam_map* param_container) {
 					return false;
 				};
 
+				if ((item_id >= 9100) && (item_id <= 9195)) {
+					// Tutorials
+					return false;
+				};
+
 				if ((item_id >= 15000) && (item_id <= 53658)) {
 					// Invalid
 					return false;
@@ -188,8 +192,16 @@ bool ERRandomiser::ShouldRandomiseMapItem(ItemLotParam_map* param_container) {
 					};
 				};
 
+				if (!randomise_materials) {
+					if (item_id >= 10100 && item_id <= 10919) {
+						// ;
+						return false;
+					};
+				};
+
 				// Don't randomise keys if selected not to do so
 				if (!random_keys) {
+
 					for (size_t q = 0; q < excluded_items.size(); q++) {
 						if (excluded_items.at(q) == item_id) {
 							return false;
