@@ -19,7 +19,8 @@ bool ERRandomiserBase::CreateMemoryEdits() {
 	solo_param_repository_class = solo_param_repository_address + *(int*)((char*)solo_param_repository_address + 3) + 7;
 
 	// Change the save file extension to prevent accidently uploading saves coming back online
-	memcpy(save_extension_address, L".rd2", 8);
+	if (save_extension_address != nullptr)
+		memcpy(save_extension_address, L".rd2", 8);
 
 	//bool is_random_keys, bool is_randomise_estusupgrade, uint64_t seed, uint64_t solo_param_repository_class, get_equipparamgoods_entry* find_equipparamgoods_function
 
@@ -171,7 +172,7 @@ bool ERRandomiserBase::FindNeededSignatures() {
 
 	return game_data_manager_address && item_give_address && item_give_hook_address_map && item_give_hook_address_lua && equip_item_address
 		&& find_equipparamweapon_function && find_equipparamprotector_function && find_equipparamgoods_function && find_equipmtrlsetparam_function
-		&& find_inventoryid_function && save_extension_address;
+		&& find_inventoryid_function;
 };
 
 void ERRandomiserBase::RandomiseItemHook(uint64_t map_item_manager, ItemGiveStruct* item_info, void* item_details) {
