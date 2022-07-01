@@ -1,4 +1,5 @@
 #include "item_randomiser_main.h"
+#include <iostream>
 
 ERItemRandomiser* main_mod = nullptr;
 
@@ -20,11 +21,14 @@ void ERItemRandomiserLoader::CreateModFunctions() {
 void ERItemRandomiser::RunSaveListener() {
 
 	using namespace std::chrono_literals;
+	//using namespace std;
 
 	if (ITEM_DEBUG) {
 		AllocConsole();
 		freopen("CONOUT$", "w", stdout);
 	};
+
+	//std::cout << "I'm here" << std::endl;
 
 	if (!GetUserPreferences()) {
 		MessageBoxA(0, "Failed to read randomizer ini", "Item Randomiser Mod - Error", MB_ICONERROR);
@@ -56,7 +60,7 @@ void ERItemRandomiser::RunSaveListener() {
 bool ERItemRandomiser::GetUserPreferences() {
 
 	// INIReader
-	INIReader option_reader = INIReader(module_file_path + "\\randomiserpreferences.ini");
+	INIReader option_reader = INIReader("ItemRandomiser\\randomiserpreferences.ini");
 	int error = option_reader.ParseError();
 	if (error) {
 		//
@@ -80,7 +84,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 	// Seed
 	OFSTRUCT file_struct = {};
 	//strcat(module_dir, "//randomiser_seed.txt")
-	const char* seed_location = (module_file_path + "\\randomiser_seed.txt").c_str();
+	const char* seed_location = "ItemRandomiser\\randomiser_seed.txt";
 	HFILE seed_file = OpenFile(seed_location, &file_struct, OF_READWRITE);
 	if (seed_file == HFILE_ERROR) {
 		char to_write_seed[24] = {};

@@ -8,7 +8,7 @@
 #include "INIReader/INIReader.h"
 #include "Hooks/item_randomiser_hooks.h"
 
-#define ITEM_DEBUG 0
+#define ITEM_DEBUG 1
 
 namespace ERItemRandomiserLoader {
 	void CreateModFunctions();
