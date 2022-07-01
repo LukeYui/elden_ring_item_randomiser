@@ -21,8 +21,10 @@ enum RandomiseType : uint8_t  {
 	randomisetype_butcher = 3,
 };
 
+
 class ERItemRandomiser {
 public:
+	static std::string module_file_path;
 	void RunSaveListener();
 	bool GetUserPreferences();
 	void RequestItemListSave(bool request_save = true); 

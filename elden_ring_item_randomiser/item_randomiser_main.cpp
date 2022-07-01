@@ -27,7 +27,8 @@ void ERItemRandomiser::RunSaveListener() {
 	};
 
 	if (!GetUserPreferences()) {
-		//
+		MessageBoxA(0, "Failed to read randomizer ini", "Item Randomiser Mod - Error", MB_ICONERROR);
+		throw std::runtime_error("Failed to read randomizer ini");
 	};
 
 	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, user_preferences & option_randomiseestusupgrades,
@@ -55,7 +56,7 @@ void ERItemRandomiser::RunSaveListener() {
 bool ERItemRandomiser::GetUserPreferences() {
 
 	// INIReader
-	INIReader option_reader = INIReader("ItemRandomiser//randomiserpreferences.ini");
+	INIReader option_reader = INIReader(module_file_path + "\\randomiserpreferences.ini");
 	int error = option_reader.ParseError();
 	if (error) {
 		//
@@ -78,7 +79,9 @@ bool ERItemRandomiser::GetUserPreferences() {
 
 	// Seed
 	OFSTRUCT file_struct = {};
-	HFILE seed_file = OpenFile("ItemRandomiser//randomiser_seed.txt", &file_struct, OF_READWRITE);
+	//strcat(module_dir, "//randomiser_seed.txt")
+	const char* seed_location = (module_file_path + "\\randomiser_seed.txt").c_str();
+	HFILE seed_file = OpenFile(seed_location, &file_struct, OF_READWRITE);
 	if (seed_file == HFILE_ERROR) {
 		char to_write_seed[24] = {};
 		LARGE_INTEGER timestamp_counter = {};
@@ -86,7 +89,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 		int bytes_size = sprintf_s(to_write_seed, "%016llX", timestamp_counter.QuadPart);
 		randomiser_seed = timestamp_counter.QuadPart;
 
-		HANDLE new_file_creation = CreateFileA("ItemRandomiser//randomiser_seed.txt", GENERIC_READ | GENERIC_WRITE, 0,
+		HANDLE new_file_creation = CreateFileA(seed_location, GENERIC_READ | GENERIC_WRITE, 0,
 			nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, 0);
 
 		if (new_file_creation == INVALID_HANDLE_VALUE) {
