@@ -1,3 +1,4 @@
+
 #include "../item_randomiser_main.h"
 
 extern ERItemRandomiser* main_mod;

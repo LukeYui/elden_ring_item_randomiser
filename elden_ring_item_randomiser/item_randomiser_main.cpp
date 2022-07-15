@@ -21,14 +21,11 @@ void ERItemRandomiserLoader::CreateModFunctions() {
 void ERItemRandomiser::RunSaveListener() {
 
 	using namespace std::chrono_literals;
-	//using namespace std;
 
 	if (ITEM_DEBUG) {
 		AllocConsole();
 		freopen("CONOUT$", "w", stdout);
 	};
-
-	//std::cout << "I'm here" << std::endl;
 
 	if (!GetUserPreferences()) {
 		MessageBoxA(0, "Failed to read randomizer ini", "Item Randomiser Mod - Error", MB_ICONERROR);
@@ -58,9 +55,24 @@ void ERItemRandomiser::RunSaveListener() {
 };
 
 bool ERItemRandomiser::GetUserPreferences() {
-
+	char module_dir[MAX_PATH + 1];
+	HMODULE mod;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		(LPCWSTR)&"", &mod);
+	GetModuleFileNameA(mod, module_dir, sizeof(module_dir));
+	char* module_file_path_point = strrchr(module_dir, '\\');
+	if (!module_file_path_point) {
+		MessageBoxA(0, "Failed to parse filepath string", "Item Randomiser Mod - Error", MB_ICONERROR);
+		throw std::runtime_error("Failed to parse filepath string");
+	};
+	*module_file_path_point = '\0';
 	// INIReader
-	INIReader option_reader = INIReader("ItemRandomiser\\randomiserpreferences.ini");
+	char ini_path[MAX_PATH + 1];
+	strcpy(ini_path, module_dir);
+	strcat(ini_path, "\\randomiserpreferences.ini");
+
+	INIReader option_reader = INIReader(ini_path);
 	int error = option_reader.ParseError();
 	if (error) {
 		//
@@ -82,11 +94,13 @@ bool ERItemRandomiser::GetUserPreferences() {
 	};
 
 	// Seed
+	char seed_location[MAX_PATH + 1];
+	strcpy(seed_location, module_dir);
+	strcat(seed_location, "\\randomiser_seed.txt");
 	OFSTRUCT file_struct = {};
-	//strcat(module_dir, "//randomiser_seed.txt")
-	const char* seed_location = "ItemRandomiser\\randomiser_seed.txt";
 	HFILE seed_file = OpenFile(seed_location, &file_struct, OF_READWRITE);
 	if (seed_file == HFILE_ERROR) {
+		std::cout << "Seed load failed" << std::endl;
 		char to_write_seed[24] = {};
 		LARGE_INTEGER timestamp_counter = {};
 		QueryPerformanceCounter(&timestamp_counter);
@@ -119,6 +133,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 		uint64_t seed = std::strtoull(file_contents, nullptr, 16);
 		randomiser_seed = seed;
 		CloseHandle((HANDLE)seed_file);
+		std::cout << "Seed " << seed << std::endl;
 	};
 
 	return true;

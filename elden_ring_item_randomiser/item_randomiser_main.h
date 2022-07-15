@@ -8,7 +8,7 @@
 #include "INIReader/INIReader.h"
 #include "Hooks/item_randomiser_hooks.h"
 
-#define ITEM_DEBUG 1
+#define ITEM_DEBUG 0
 
 namespace ERItemRandomiserLoader {
 	void CreateModFunctions();
@@ -24,7 +24,6 @@ enum RandomiseType : uint8_t  {
 
 class ERItemRandomiser {
 public:
-	static std::string module_file_path;
 	void RunSaveListener();
 	bool GetUserPreferences();
 	void RequestItemListSave(bool request_save = true); 
