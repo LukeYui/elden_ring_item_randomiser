@@ -1,5 +1,4 @@
 #include "item_randomiser_main.h"
-#include <iostream>
 
 ERItemRandomiser* main_mod = nullptr;
 
@@ -100,7 +99,6 @@ bool ERItemRandomiser::GetUserPreferences() {
 	OFSTRUCT file_struct = {};
 	HFILE seed_file = OpenFile(seed_location, &file_struct, OF_READWRITE);
 	if (seed_file == HFILE_ERROR) {
-		std::cout << "Seed load failed" << std::endl;
 		char to_write_seed[24] = {};
 		LARGE_INTEGER timestamp_counter = {};
 		QueryPerformanceCounter(&timestamp_counter);
@@ -133,7 +131,6 @@ bool ERItemRandomiser::GetUserPreferences() {
 		uint64_t seed = std::strtoull(file_contents, nullptr, 16);
 		randomiser_seed = seed;
 		CloseHandle((HANDLE)seed_file);
-		std::cout << "Seed " << seed << std::endl;
 	};
 
 	return true;
