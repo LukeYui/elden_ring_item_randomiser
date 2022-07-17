@@ -21,6 +21,7 @@ enum RandomiseType : uint8_t  {
 	randomisetype_butcher = 3,
 };
 
+
 class ERItemRandomiser {
 public:
 	void RunSaveListener();
