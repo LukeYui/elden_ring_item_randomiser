@@ -22,8 +22,8 @@ struct ItemInfo {
 	ItemInfo() {
 		item_id = __UINT32_MAX__;
 		item_quantity = 0;
-		item_quantity = 0;
 		item_relayvalue = 0;
+		item_ashes_of_war = -1;
 	};
 	uint32_t item_id;
 	uint32_t item_quantity;
