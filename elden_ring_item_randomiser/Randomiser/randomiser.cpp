@@ -105,7 +105,6 @@ bool ERRandomiser::ShuffleShopLineupParam(uint64_t solo_param_repository, std::w
 	uint64_t shoplineupparam_idrepository = shoplineupparam + start_offset;
 	for (uint32_t i = 1; i < param_entries; i++) {
 
-
 		uint32_t shopitem_id = *(uint32_t*)(shoplineupparam_idrepository + (i * 8));
 		uint32_t entry = *(uint32_t*)(shoplineupparam_idrepository + (i * 8) + 4);
 		if ((int)entry < 0) {

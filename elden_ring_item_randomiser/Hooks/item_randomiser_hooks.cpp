@@ -92,7 +92,9 @@ bool ERRandomiserBase::FindNeededSignatures() {
 		0,
 	};
 	item_give_hook_address_map = (uint64_t)signature_class.FindSignature(item_give_hook_signature_map);
-	item_give_hook_address_map += 11;
+	if (item_give_hook_address_map) {
+		item_give_hook_address_map += 11;
+	};
 
 	// CS::LuaEventManagerImp (event tied items)
 	Signature item_give_hook_signature_lua = {
@@ -115,12 +117,15 @@ bool ERRandomiserBase::FindNeededSignatures() {
 	};
 
 	Signature equip_item_signature = {
-		"\x40\x53\x48\x83\xEC\x20\x48\x8B\xD9\x48\x8D\x51\x10",
-		"xxxxxxxxxxxxx",
-		13,
+		"\x48\x8B\xF9\x48\x83\xC1\x10\xE8\xFF\xFF\xFF\xFF\x8B\x4F",
+		"xxxxxxx????xx",
+		14,
 		0,
 	};
 	equip_item_address = (uint64_t)signature_class.FindSignature(equip_item_signature);
+	if (equip_item_address) {
+		equip_item_address -= 10;
+	};
 
 	Signature find_equipparamweapon_signature = {
 		"\x40\x57\x41\x56\x41\x57\x48\x83\xEC\x40\x48\xC7\x44\x24\x20\xFE\xFF\xFF\xFF\x48\x89\x5C\x24\x60\x48\x89\x6C\x24\x68\x48\x89\x74\x24\x70\x8B",
