@@ -27,7 +27,8 @@ void ERItemRandomiser::RunSaveListener() {
 	};
 
 	if (!GetUserPreferences()) {
-		//
+		MessageBoxA(0, "Failed to read randomizer ini", "Item Randomiser Mod - Error", MB_ICONERROR);
+		throw std::runtime_error("Failed to read randomizer ini");
 	};
 
 	hook_class = ERRandomiserBase(user_preferences & option_autoequip, user_preferences & option_randomisekeys, user_preferences & option_randomiseestusupgrades,
@@ -53,9 +54,24 @@ void ERItemRandomiser::RunSaveListener() {
 };
 
 bool ERItemRandomiser::GetUserPreferences() {
-
+	char module_dir[MAX_PATH + 1];
+	HMODULE mod;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		(LPCWSTR)&"", &mod);
+	GetModuleFileNameA(mod, module_dir, sizeof(module_dir));
+	char* module_file_path_point = strrchr(module_dir, '\\');
+	if (!module_file_path_point) {
+		MessageBoxA(0, "Failed to parse filepath string", "Item Randomiser Mod - Error", MB_ICONERROR);
+		throw std::runtime_error("Failed to parse filepath string");
+	};
+	*module_file_path_point = '\0';
 	// INIReader
-	INIReader option_reader = INIReader("ItemRandomiser//randomiserpreferences.ini");
+	char ini_path[MAX_PATH + 1];
+	strcpy(ini_path, module_dir);
+	strcat(ini_path, "\\randomiserpreferences.ini");
+
+	INIReader option_reader = INIReader(ini_path);
 	int error = option_reader.ParseError();
 	if (error) {
 		//
@@ -77,8 +93,11 @@ bool ERItemRandomiser::GetUserPreferences() {
 	};
 
 	// Seed
+	char seed_location[MAX_PATH + 1];
+	strcpy(seed_location, module_dir);
+	strcat(seed_location, "\\randomiser_seed.txt");
 	OFSTRUCT file_struct = {};
-	HFILE seed_file = OpenFile("ItemRandomiser//randomiser_seed.txt", &file_struct, OF_READWRITE);
+	HFILE seed_file = OpenFile(seed_location, &file_struct, OF_READWRITE);
 	if (seed_file == HFILE_ERROR) {
 		char to_write_seed[24] = {};
 		LARGE_INTEGER timestamp_counter = {};
@@ -86,7 +105,7 @@ bool ERItemRandomiser::GetUserPreferences() {
 		int bytes_size = sprintf_s(to_write_seed, "%016llX", timestamp_counter.QuadPart);
 		randomiser_seed = timestamp_counter.QuadPart;
 
-		HANDLE new_file_creation = CreateFileA("ItemRandomiser//randomiser_seed.txt", GENERIC_READ | GENERIC_WRITE, 0,
+		HANDLE new_file_creation = CreateFileA(seed_location, GENERIC_READ | GENERIC_WRITE, 0,
 			nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, 0);
 
 		if (new_file_creation == INVALID_HANDLE_VALUE) {
